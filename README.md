@@ -1,5 +1,43 @@
 # Coding and Bioinformatics Practice
 
+## Terminal Options
+
+<br>
+
+__PuTTY__
+
+---
+
+PuTTY is a free implementation of SSH and Telnet for Windows and Unix platforms, along with an xterm terminal emulator. It is written and maintained primarily by Simon Tatham.
+
+[from https://www.chiark.greenend.org.uk/~sgtatham/putty/]
+
+<br>
+
+_Installation_
+
+Download the installer here:<br>
+https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
+
+For 64-bit system (*which is likely what you have*), download `putty-64bit-0.81-installer.msi`
+
+<br>
+
+__MobaXterm__
+
+---
+
+MobaXterm is your ultimate toolbox for remote computing. In a single Windows application, it provides loads of functions that are tailored for programmers, webmasters, IT administrators and pretty much all users who need to handle their remote jobs in a more simple fashion.
+
+MobaXterm provides all the important remote network tools (SSH, X11, RDP, VNC, FTP, MOSH, ...) and Unix commands (bash, ls, cat, sed, grep, awk, rsync, ...) to Windows desktop, in a single portable exe file which works out of the box. More info on supported network protocols.
+
+[from https://mobaxterm.mobatek.net/]
+
+
+From the following link, install `MobaXterm Home Edition v24.1 (Installer edition)`:
+
+https://mobaxterm.mobatek.net/download-home-edition.html
+
 
 ## Miniconda
 
