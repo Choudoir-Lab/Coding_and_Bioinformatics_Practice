@@ -1,6 +1,6 @@
 # Coding and Bioinformatics Practice
 
-## Terminal Options
+## Terminal Options (Optional)
 
 <br>
 
@@ -97,3 +97,192 @@ or
 3. Follow the instructions on the screen. Accept default settings.
 4. When the installation finishes, from the Start menu, open Anaconda Prompt.
 5. Test your installation by running `conda list`. If conda has been installed correctly, a list of installed packages appears.
+
+<br>
+
+__Commands__
+
+---
+<br>
+
+`conda activate`
+
+After installing miniconda, you can use the following command to activate the default conda environment:
+
+```
+conda activate
+```
+
+To activate any installed conda environments, use the following command:
+
+```
+conda activate [environment name]
+```
+```
+conda activate python_env
+```
+<br>
+
+`conda deactivate`
+
+To deactivate any currently activated conda environments:
+
+```
+conda deactivate
+```
+
+<br>
+
+[`conda create`](https://docs.conda.io/projects/conda/en/stable/commands/create.html)
+
+To create an entirely new, empty environment:
+
+```
+conda create -n [new environment name]
+```
+```
+conda create -n python_env
+```
+
+To create new environment with package:
+
+```
+conda create -n [new environment name] [package name]
+```
+```
+conda create -n python_env python 
+```
+<br>
+
+[`conda env`](https://docs.conda.io/projects/conda/en/stable/commands/env/index.html)
+
+To list all environments installed on the current system:
+
+```
+conda env list
+```
+
+![conda env list example](image.png)
+
+To create an environment definition file from the current conda environment:
+
+```
+conda env export --file [file_name.yml]
+```
+
+![Example yml file](image-1.png)
+
+To create an environment based on an environment definition file:
+
+```
+conda env create -f [/path/to/environment.yml]
+```
+
+To remove a specific conda environment:
+
+```
+conda env remove --name [environment name]
+conda env remove -n [environment name]
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_You must have deactivated the environment prior to removal._
+
+
+<br>
+
+[`conda install`](https://docs.conda.io/projects/conda/en/stable/commands/install.html)
+
+To install a package in a currently active environment:
+
+```
+conda install [package name]
+```
+```
+conda install python
+```
+
+To install a package into a specified environment:
+
+```
+conda install -n [environment name] [package 1] [package 2] [package #]
+```
+
+```
+conda install -n new_env python numpy pandas
+```
+<br>
+
+[`conda remove`](https://docs.conda.io/projects/conda/en/stable/commands/remove.html)
+
+To remove a singular package installed in the current conda environment:
+
+```
+conda remove [package]
+```
+
+To remove a singular package installed in a specified conda environment:
+
+```
+conda remove -n [environment name] [package]
+```
+
+To remove a list of packages installed in a conda environment:
+
+```
+conda remove -n [environment name] [package 1] [package 2] [package #]
+```
+
+To remove all packages from a conda environment:
+
+```
+conda remove -n [environment name] --all
+```
+
+To remove all packages from a conda environment and retain the environment:
+
+```
+conda remove -n [environment name] --all --keep-env
+```
+<br>
+
+[`conda clean`](https://docs.conda.io/projects/conda/en/stable/commands/clean.html)
+
+To remove unused packages:
+
+```
+conda clean --packages
+conda clean -p
+```
+
+To remove unused package tarballs:
+
+```
+conda clean --tarballs
+conda clean -t
+```
+
+To remove leftover temporary files:
+
+```
+conda clean --tempfiles
+conda clean -c
+```
+<br>
+
+[`conda update`](https://docs.conda.io/projects/conda/en/stable/commands/update.html)
+
+Accepts a list of packages and will attempt to update them to the latest versions that are still compatible with all other packages in the environment.
+
+To update a singlular package in a conda environment:
+
+```
+conda update -n [environment name] [package]
+```
+
+To update multiple packages in a conda environment:
+
+```
+conda update -n [environment name] [package 1] [package 2] [package #]
+```
+
+
+
