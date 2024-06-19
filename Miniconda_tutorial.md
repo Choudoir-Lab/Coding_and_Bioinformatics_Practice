@@ -1,4 +1,4 @@
-# Coding and Bioinformatics Practice
+# Anaconda (Miniconda) Practice
 
 ## Terminal Options (Optional)
 
