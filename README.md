@@ -14,7 +14,7 @@ PuTTY is a free implementation of SSH and Telnet for Windows and Unix platforms,
 
 <br>
 
-_Installation_
+_Installation:_
 
 Download the installer here:<br>
 https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
@@ -33,6 +33,9 @@ MobaXterm provides all the important remote network tools (SSH, X11, RDP, VNC, F
 
 [from https://mobaxterm.mobatek.net/]
 
+<br>
+
+_Installation:_
 
 From the following link, install `MobaXterm Home Edition v24.1 (Installer edition)`:
 
