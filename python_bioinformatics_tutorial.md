@@ -67,7 +67,7 @@ Now that we have the hmmsearch output, we can use that information to dig deeper
 
 &nbsp;&nbsp;&nbsp;&nbsp;*Note: `sys.argv` ONLY assigns the file path to the variable specified*
 
-<br>
+---
 
 Biopython has several functions that make working with fasta files easier. One way to input a fasta file is the `SeqIO.index` function.
 
@@ -91,7 +91,7 @@ pd.read_csv([filename], delimiter=[delimiter])
     
 </details>
 
-<br>
+---
 
 When working with `Pandas` tables, you can pull out data by specifying the column name for the table you are working with. 
 
@@ -114,7 +114,7 @@ Another important function is the `tolist()` function, which will take something
 
 </details>
 
-<br>
+---
 
 To recursively add items to an empty list, the `append()` function can be used in the following way:
 
@@ -132,7 +132,7 @@ example_list.append(item)
     
 </details>
 
-<br>
+---
 
 Biopython has a convinient function to write properly-formatted FASTA files.
 
