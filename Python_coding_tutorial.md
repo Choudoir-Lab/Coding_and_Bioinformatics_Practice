@@ -1,5 +1,16 @@
 # Python Coding Information
 
+## Table of Contents
+
+1. [Variable Types](#variable-types)
+2. [Conditional Statements](#conditional-statements)
+3. [Loops](#loops)
+4. [Functions](#functions)
+5. [User Input](#user-input)
+
+<br>
+<br>
+
 ## Variable Types
 
 <br>
