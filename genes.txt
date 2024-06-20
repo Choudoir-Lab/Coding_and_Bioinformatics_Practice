@@ -1,0 +1,11 @@
+Central Carbon Metabolism:
+K01810 - GPI, pgi; glucose-6-phosphate isomerase
+K01958 - pyruvate carboxylase
+
+Assimilatory Sulfate Reduction:
+K00958 - sat, met3; sulfate adenylyltransferase
+K00955 - cysNC; bifunctional enzyme CysN/CysC
+K13811 - PAPSS; 3'-phosphoadenosine 5'-phosphosulfate synthase
+K00390 - cysH; phosphoadenosine phosphosulfate reductase
+K00380 - cysJ; sulfite reductase (NADPH) flavoprotein alpha-component
+K00392 - sir; sulfite reductase (ferredoxin)
