@@ -90,6 +90,10 @@ If using zsh shell:
 
 `~/miniconda3/bin/conda init zsh`
 
+You can check what shell you are using by entering the following into the command line:
+
+`echo $SHELL`
+
 <br>
 
 *Windows*
