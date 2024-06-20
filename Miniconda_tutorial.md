@@ -1,5 +1,15 @@
 # Anaconda (Miniconda) Practice
 
+## Table of Contents
+
+1. [Terminal Options](#terminal-options-optional)
+2. [Miniconda](#miniconda) <br>
+    a. [Description](#description) <br>
+    b. [Installation](#installation) <br>
+    c. [Common Conda Commands](#commands) <br>
+    
+
+
 ## Terminal Options (Optional)
 
 <br>
@@ -46,7 +56,7 @@ https://mobaxterm.mobatek.net/download-home-edition.html
 
 <br>
 
-__Description__
+__Description__ <a name="description"></a>
 
 ---
 
@@ -56,7 +66,7 @@ This allows for control over which packages are installed.
 
 <br>
 
-__Installation__
+__Installation__ <a name="installation"></a>
 
 ---
 <br>
@@ -100,7 +110,7 @@ or
 
 <br>
 
-__Commands__
+__Commands__ <a name="commands"></a>
 
 ---
 <br>
