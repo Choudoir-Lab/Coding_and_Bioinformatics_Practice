@@ -176,7 +176,7 @@ To list all environments installed on the current system:
 conda env list
 ```
 
-![conda env list example](image.png)
+![conda env list example](markdown_images/image.png)
 
 To create an environment definition file from the current conda environment:
 
@@ -184,7 +184,7 @@ To create an environment definition file from the current conda environment:
 conda env export --file [file_name.yml]
 ```
 
-![Example yml file](image-1.png)
+![Example yml file](markdown_images/image-1.png)
 
 To create an environment based on an environment definition file:
 

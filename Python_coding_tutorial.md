@@ -483,7 +483,7 @@ for item in list3:
         print(item)
 ```
 
-![contiue command flowchart](image-2.png)
+![contiue command flowchart](markdown_images/image-2.png)
 
 ``` python
 "item1"
