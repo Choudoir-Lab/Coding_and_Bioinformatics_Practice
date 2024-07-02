@@ -1,1 +1,1 @@
-# Bioinformatics Program Usex
+# Bioinformatics Program Uses
