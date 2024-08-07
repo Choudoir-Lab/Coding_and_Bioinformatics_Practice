@@ -1,4 +1,3 @@
-from Bio.Seq import Seq
 import argparse
 import textwrap
 import os
