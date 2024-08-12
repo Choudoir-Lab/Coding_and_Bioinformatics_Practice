@@ -3,7 +3,7 @@ import argparse
 import textwrap
 import os
 
-parser = argparse.ArgumentParser(prog="get_index_seqs.py", 
+parser = argparse.ArgumentParser(prog="limit_scaffold_length.py", 
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description=textwrap.dedent('''\
                                                              Tool to remove scaffolds with sequences less than a specified threshold.
@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(prog="get_index_seqs.py",
 
 parser.add_argument('-f', '--file', help="Specify file path to singular fasta file", nargs=1, default=None)
 parser.add_argument('-d', '--dir', help="Specify file path to directory containing fasta files", nargs=1, default=None)
-parser.add_argument('-l', '--length', help="Specify minimum length cutoff of scaffolds", nargs=1, default=None, metavar="LEN")
+parser.add_argument('-l', '--length', help="Specify minimum length cutoff of scaffolds", nargs=1, default=None, metavar="LEN", required=True)
 
 args = parser.parse_args()
 

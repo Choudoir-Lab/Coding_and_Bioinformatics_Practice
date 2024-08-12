@@ -2,7 +2,7 @@ import argparse
 import textwrap
 import os
 
-parser = argparse.ArgumentParser(prog="get_index_seqs.py", 
+parser = argparse.ArgumentParser(prog="add_filename_to_header.py", 
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description=textwrap.dedent('''\
                                                              Tool to add filename to contig/sequence header'''),
