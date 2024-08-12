@@ -1,4 +1,3 @@
-import sys
 from Bio.Seq import Seq
 import argparse
 import textwrap
