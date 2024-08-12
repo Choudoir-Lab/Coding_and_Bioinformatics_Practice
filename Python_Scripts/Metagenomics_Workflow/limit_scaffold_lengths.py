@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(prog="limit_scaffold_length.py",
 
 parser.add_argument('-f', '--file', help="Specify file path to singular fasta file", nargs=1, default=None)
 parser.add_argument('-d', '--dir', help="Specify file path to directory containing fasta files", nargs=1, default=None)
-parser.add_argument('-l', '--length', help="Specify minimum length cutoff of scaffolds", nargs=1, default=None, metavar="LEN", required=True)
+parser.add_argument('-l', '--length', help="Specify minimum length cutoff of scaffolds (default: %(default)s)", nargs=1, default="1000", metavar="LEN", required=True)
 
 args = parser.parse_args()
 
