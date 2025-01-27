@@ -27,13 +27,13 @@ parser = argparse.ArgumentParser(prog="ecoplate_calculations.py",
                                  epilog="Written by Adam Breister, ambreist@ncsu.edu")
 
 parser.add_argument('-p', '--path', help="Specify path to directory with plate reader output excel spreadsheets (default: './')", nargs=1, default="./")
-parser.add_argument('-s', '--substrate', help="Specify path to text file with ordered list of substrates (A1,A2...B1,B2...H11,H12) with each substrate on separate line", nargs=1, required=True)
+parser.add_argument('-s', '--sep', help="Comma-separated list of strings that distinguish groupings in input spreadsheets", nargs=1, required=True)
 parser.add_argument('-l', '--line', help="Specify the row number that the header for the raw data table is (default: '30')", nargs=1, default=30, type=int)
 parser.add_argument('-o', '--out', help="Specify directory where output files will be generated (default: './')", nargs=1, default="./", type=str)
 
 args = parser.parse_args()
 
-substrates = args.substrate[0]
+separator = args.sep[0]
 start_line = args.line[0]
 
 if args.path[0].endswith("/"):
@@ -68,6 +68,71 @@ def read_input_spreadsheets(input_file,start):
 
     return ecoplate_value_dict
 
+def calculate_awcd(all_data_dict, metadata):
+    combined_awcd = {}
+    
+    for sheetname_2 in all_data_dict.keys():
+        only_values_dataframe = pd.DataFrame(all_data_dict[sheetname_2])
+        ecoplate_data = pd.concat([metadata, only_values_dataframe], axis=1)
+
+        ecoplate_data.drop("Well Name", axis=1, inplace=True)
+
+
+        grouped_average_ecoplate_data = ecoplate_data.groupby("Well Substrate").mean()
+        grouped_average_ecoplate_data.reset_index(inplace=True)
+
+
+        water_index = grouped_average_ecoplate_data.loc[grouped_average_ecoplate_data["Well Substrate"]=="Water", :].index[0]
+        water_absorbance_series = grouped_average_ecoplate_data.iloc[water_index]
+        grouped_average_ecoplate_data.drop([water_index], inplace=True)
+        new_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
+
+        subtracted_all_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series).drop(["Well Substrate"], axis=1)
+        subtracted_all_absorbance[subtracted_all_absorbance < 0] = 0
+
+        average_well_color_development = subtracted_all_absorbance.sum()/31
+        average_well_color_development.name = sheetname_2.rsplit("_", 1)[0]
+
+        combined_awcd[sheetname_2] = average_well_color_development
+
+    return combined_awcd
+
+def calculate_sawcd(all_data_dict, metadata, substrate_guilds_inv):
+    combined_sawcd = {}
+    
+    for sheetname_2 in all_data_dict.keys():
+        only_values_dataframe = pd.DataFrame(all_data_dict[sheetname_2])
+        ecoplate_data = pd.concat([metadata, only_values_dataframe], axis=1)
+
+        ecoplate_data.drop("Well Name", axis=1, inplace=True)
+
+
+        grouped_average_ecoplate_data = ecoplate_data.groupby("Well Substrate").mean()
+        grouped_average_ecoplate_data.reset_index(inplace=True)
+
+
+        water_index = grouped_average_ecoplate_data.loc[grouped_average_ecoplate_data["Well Substrate"]=="Water", :].index[0]
+        water_absorbance_series = grouped_average_ecoplate_data.iloc[water_index]
+        grouped_average_ecoplate_data.drop([water_index], inplace=True)
+        new_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
+
+        grouped_average_ecoplate_data.set_index("Well Substrate", inplace=True)
+
+        subtracted_all_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series)
+        subtracted_all_absorbance[subtracted_all_absorbance < 0] = 0
+
+        subtracted_all_absorbance.reset_index(level=0, inplace=True)
+        
+        subtracted_all_absorbance["Substrate Guild"] = subtracted_all_absorbance["Well Substrate"].map(substrate_guilds_inv)
+        subtracted_all_absorbance.drop(["Well Substrate"], axis=1, inplace=True)
+        
+        guild_average_ecoplate_data = subtracted_all_absorbance.groupby("Substrate Guild").mean()
+        guild_average_ecoplate_data_transposed = guild_average_ecoplate_data.T
+
+
+        combined_sawcd[sheetname_2] = guild_average_ecoplate_data_transposed
+
+    return combined_sawcd
 
 directory_list = os.listdir(path_to_files)
 full_reordered_data_dict = {}
@@ -134,15 +199,15 @@ list_of_substrates = ["Water","β-Methyl-D-Glucoside","D-Galactonic Acid γ-Lact
 "L-Serine",
 "α-Cyclodextrin",
 "N-Acetyl-D-Glucosamine",
-"γ-Amino Butyric Acid ",
+"γ-Amino Butyric Acid",
 "L-Threonine",
 "α-Cyclodextrin",
 "N-Acetyl-D-Glucosamine",
-"γ-Amino Butyric Acid ",
+"γ-Amino Butyric Acid",
 "L-Threonine",
 "α-Cyclodextrin",
 "N-Acetyl-D-Glucosamine",
-"γ-Amino Butyric Acid ",
+"γ-Amino Butyric Acid",
 "L-Threonine",
 "Glycogen",
 "D-Glucosaminic Acid",
@@ -181,53 +246,43 @@ list_of_substrates = ["Water","β-Methyl-D-Glucoside","D-Galactonic Acid γ-Lact
 "D-Malic Acid",
 "Putrescine"]
 
+substrate_guilds = {"Amino Acids": ["L-Arginine", "L-Asparagine", "L-Phenylalanine", "L-Serine", "β-HydroxyGlycyl-L-Glutamic Acid", "L-Threonine"], 
+                    "Amines": ["Phenylethylamine", "Putrescine"], 
+                    "Carbohydrates": ["D-Mannitol", "Glucose1-Phosphate", "D,L-α-Glycerol Phosphate", "β-Methyl-D-Glucoside", "D-Galactonic Acid γ-Lactone", 
+                                      "i-Erythritol", "D-Xylose", "N-Acetyl-D-Glucosamine", "D-Cellobiose", "α-D-Lactose"], 
+                    "Carboxylic Acids": ["D-Glucosaminic Acid", "D-Malic Acid", "Itaconic Acid", "Pyruvic Acid Methyl Ester", "D-Galacturonic Acid", "α-Keto Butyric Acid", 
+                                         "γ-Amino Butyric Acid"], 
+                    "Phenolic Compounds": ["2-Hydroxy Benzoic Acid", "4-Hydroxy Benzoic Acid"],
+                    "Polymers": ["Tween 40", "Tween 80", "α-Cyclodextrin", "Glycogen"]}
+
+inverted_substrate_guilds = {}
+for guilds in substrate_guilds.keys():
+    for substrate in substrate_guilds[guilds]:
+        inverted_substrate_guilds[substrate] = guilds
+
+
 well_metadata_df = pd.DataFrame({"Well Name":well_ids, "Well Substrate":list_of_substrates})
 
+## Outputting Excel Spreadsheet with Reordered Absorbance Readings
+
 with pd.ExcelWriter(output_directory + "Reordered_Ecoplate_Data.xlsx") as writer:
-    for sheetname in full_reordered_data_dict.keys():
+    for sheetname in sorted(full_reordered_data_dict.keys()):
         values_dataframe = pd.DataFrame(full_reordered_data_dict[sheetname])
         metadata_values_dataframe = pd.concat([well_metadata_df, values_dataframe], axis=1)
 
         metadata_values_dataframe.to_excel(writer, sheet_name=sheetname, index=False)
 
-
-def calculate_awcd(all_data_dict, metadata):
-    combined_awcd = {}
-    
-    for sheetname_2 in all_data_dict.keys():
-        only_values_dataframe = pd.DataFrame(all_data_dict[sheetname_2])
-        ecoplate_data = pd.concat([metadata, only_values_dataframe], axis=1)
-
-        ecoplate_data.drop("Well Name", axis=1, inplace=True)
-
-
-        grouped_average_ecoplate_data = ecoplate_data.groupby("Well Substrate").mean()
-        grouped_average_ecoplate_data.reset_index(inplace=True)
-
-
-        water_index = grouped_average_ecoplate_data.loc[grouped_average_ecoplate_data["Well Substrate"]=="Water", :].index[0]
-        water_absorbance_series = grouped_average_ecoplate_data.iloc[water_index]
-        grouped_average_ecoplate_data.drop([water_index], inplace=True)
-        new_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
-
-        subtracted_all_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series).drop(["Well Substrate"], axis=1)
-        subtracted_all_absorbance[subtracted_all_absorbance < 0] = 0
-
-        average_well_color_development = subtracted_all_absorbance.sum()/31
-        average_well_color_development.name = sheetname_2.rsplit("_", 1)[0]
-
-        combined_awcd[sheetname_2] = average_well_color_development
-
-    return combined_awcd
-
 awcd_dict = calculate_awcd(full_reordered_data_dict, well_metadata_df)
 
+sawcd_dict = calculate_sawcd(full_reordered_data_dict, well_metadata_df, inverted_substrate_guilds)
+
+## Outputing Excel Spreadsheet with AWCD values
 
 with pd.ExcelWriter(output_directory + "Ecoplate_Average_Well_Color_Development.xlsx") as writer_2:
     if "," in separator:
         for splits in separator.split(","):
             specific_series = pd.Series()
-            for names in awcd_dict.keys():
+            for names in sorted(awcd_dict.keys()):
                 if splits in names:
                     specific_series = pd.concat([specific_series, awcd_dict[names]], axis=1)
             
@@ -236,10 +291,18 @@ with pd.ExcelWriter(output_directory + "Ecoplate_Average_Well_Color_Development.
             specific_series.to_excel(writer_2, sheet_name=splits, index=True)
     else:
         specific_series = pd.Series()
-        for names in awcd_dict.keys():
+        for names in sorted(awcd_dict.keys()):
             if separator in names:
                 specific_series = pd.concat([specific_series, awcd_dict[names]], axis=1)
             
         specific_series.drop(0, axis=1, inplace=True)
 
         specific_series.to_excel(writer_2, sheet_name=separator, index=True)
+
+## Outputting Excel Spreadsheet with SAWCD values
+
+with pd.ExcelWriter(output_directory + "Ecoplate_Substrate_Average_Well_Color_Development.xlsx") as writer_3:
+    for names in sorted(sawcd_dict.keys()):
+        output_sheet = sawcd_dict[names]
+
+        output_sheet.to_excel(writer_3, sheet_name=names, index=True)
