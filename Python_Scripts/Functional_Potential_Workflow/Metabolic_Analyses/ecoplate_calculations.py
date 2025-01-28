@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import textwrap
+import numpy as np
 
 parser = argparse.ArgumentParser(prog="ecoplate_calculations.py", 
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -30,11 +31,22 @@ parser.add_argument('-p', '--path', help="Specify path to directory with plate r
 parser.add_argument('-s', '--sep', help="Comma-separated list of strings that distinguish groupings in input spreadsheets", nargs=1, required=True)
 parser.add_argument('-l', '--line', help="Specify the row number that the header for the raw data table is (default: '30')", nargs=1, default=30, type=int)
 parser.add_argument('-o', '--out', help="Specify directory where output files will be generated (default: './')", nargs=1, default="./", type=str)
+parser.add_argument('-r', '--rich', help="Corrected OD value threshold to identify utilized substrates (default: 0.15)", nargs=1, default=0.15, type=float)
 
 args = parser.parse_args()
 
 separator = args.sep[0]
-start_line = args.line[0]
+
+
+if type(args.line) is not int:
+    start_line = args.line[0]
+else:
+    start_line = args.line
+
+if type(args.rich) is not float:
+    threshold = args.rich[0]
+else:
+    threshold = args.rich
 
 if args.path[0].endswith("/"):
     path_to_files = args.path[0]
@@ -45,6 +57,7 @@ if args.out[0].endswith("/"):
     output_directory = args.out[0]
 else:
     output_directory = args.out[0] + "/"
+
 
 def read_input_spreadsheets(input_file,start):
     rows_to_skip = start - 1
@@ -68,53 +81,47 @@ def read_input_spreadsheets(input_file,start):
 
     return ecoplate_value_dict
 
+def get_average_absorbance_values(data_dict, metadata_table, sheet_name):
+    
+    only_values_dataframe = pd.DataFrame(data_dict[sheet_name])
+    ecoplate_data = pd.concat([metadata_table, only_values_dataframe], axis=1)
+
+    ecoplate_data.drop("Well Name", axis=1, inplace=True)
+
+
+    grouped_average_ecoplate = ecoplate_data.groupby("Well Substrate").mean()
+    grouped_average_ecoplate.reset_index(inplace=True)
+
+
+    water_index = grouped_average_ecoplate.loc[grouped_average_ecoplate["Well Substrate"]=="Water", :].index[0]
+    water_absorbance_series = grouped_average_ecoplate.iloc[water_index]
+    grouped_average_ecoplate.drop([water_index], inplace=True)
+    final_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
+
+    #grouped_average_ecoplate.set_index("Well Substrate", inplace=True)
+
+    return final_water_absorbance_series, grouped_average_ecoplate
+
 def calculate_awcd(all_data_dict, metadata):
     combined_awcd = {}
     
-    for sheetname_2 in all_data_dict.keys():
-        only_values_dataframe = pd.DataFrame(all_data_dict[sheetname_2])
-        ecoplate_data = pd.concat([metadata, only_values_dataframe], axis=1)
-
-        ecoplate_data.drop("Well Name", axis=1, inplace=True)
-
-
-        grouped_average_ecoplate_data = ecoplate_data.groupby("Well Substrate").mean()
-        grouped_average_ecoplate_data.reset_index(inplace=True)
-
-
-        water_index = grouped_average_ecoplate_data.loc[grouped_average_ecoplate_data["Well Substrate"]=="Water", :].index[0]
-        water_absorbance_series = grouped_average_ecoplate_data.iloc[water_index]
-        grouped_average_ecoplate_data.drop([water_index], inplace=True)
-        new_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
+    for sheetname_awcd in all_data_dict.keys():
+        new_water_absorbance_series, grouped_average_ecoplate_data = get_average_absorbance_values(all_data_dict, metadata, sheetname_awcd)
 
         subtracted_all_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series).drop(["Well Substrate"], axis=1)
         subtracted_all_absorbance[subtracted_all_absorbance < 0] = 0
 
         average_well_color_development = subtracted_all_absorbance.sum()/31
-        average_well_color_development.name = sheetname_2.rsplit("_", 1)[0]
-
-        combined_awcd[sheetname_2] = average_well_color_development
+        average_well_color_development.name = sheetname_awcd.rsplit("_", 1)[0]
+        combined_awcd[sheetname_awcd] = average_well_color_development
 
     return combined_awcd
 
 def calculate_sawcd(all_data_dict, metadata, substrate_guilds_inv):
     combined_sawcd = {}
     
-    for sheetname_2 in all_data_dict.keys():
-        only_values_dataframe = pd.DataFrame(all_data_dict[sheetname_2])
-        ecoplate_data = pd.concat([metadata, only_values_dataframe], axis=1)
-
-        ecoplate_data.drop("Well Name", axis=1, inplace=True)
-
-
-        grouped_average_ecoplate_data = ecoplate_data.groupby("Well Substrate").mean()
-        grouped_average_ecoplate_data.reset_index(inplace=True)
-
-
-        water_index = grouped_average_ecoplate_data.loc[grouped_average_ecoplate_data["Well Substrate"]=="Water", :].index[0]
-        water_absorbance_series = grouped_average_ecoplate_data.iloc[water_index]
-        grouped_average_ecoplate_data.drop([water_index], inplace=True)
-        new_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
+    for sheetname_sawcd in all_data_dict.keys():
+        new_water_absorbance_series, grouped_average_ecoplate_data = get_average_absorbance_values(all_data_dict, metadata, sheetname_sawcd)
 
         grouped_average_ecoplate_data.set_index("Well Substrate", inplace=True)
 
@@ -130,9 +137,54 @@ def calculate_sawcd(all_data_dict, metadata, substrate_guilds_inv):
         guild_average_ecoplate_data_transposed = guild_average_ecoplate_data.T
 
 
-        combined_sawcd[sheetname_2] = guild_average_ecoplate_data_transposed
+        combined_sawcd[sheetname_sawcd] = guild_average_ecoplate_data_transposed
 
     return combined_sawcd
+
+def calculate_diversity(all_data_dict, metadata, cutoff):
+    combined_shannon_div = {}
+    combined_shannon_even = {}
+    combined_substrate_richness = {}
+    
+    for sheetname_div in all_data_dict.keys():
+        new_water_absorbance_series, grouped_average_ecoplate_data = get_average_absorbance_values(all_data_dict, metadata, sheetname_div)
+
+        subtracted_all_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series).drop(["Well Substrate"], axis=1)
+        subtracted_all_absorbance[subtracted_all_absorbance < 0] = 0
+
+        full_plate_total_corrected_absorbance = subtracted_all_absorbance.sum(axis=0)
+        
+        corrected_absorbance_fraction = subtracted_all_absorbance.div(full_plate_total_corrected_absorbance)
+
+        def mapping_condition(x):
+            if x==0:
+                pass
+            else:
+                return np.log(x)
+
+
+        natural_log_corrected_absorbance_fraction = corrected_absorbance_fraction.map(mapping_condition)
+        
+        
+        mult_natural_log_corrected_absorbance_fraction = natural_log_corrected_absorbance_fraction.mul(corrected_absorbance_fraction)
+        sum_mult_natural_log_corrected_absorbance_fraction = mult_natural_log_corrected_absorbance_fraction.sum()
+
+        shannon_diversity = -(sum_mult_natural_log_corrected_absorbance_fraction)
+        substrate_richness = subtracted_all_absorbance[subtracted_all_absorbance >= cutoff].count()
+        natural_log_substrate_richness = substrate_richness.apply(mapping_condition)
+        shannon_evenness = shannon_diversity / natural_log_substrate_richness
+
+        shannon_evenness[shannon_evenness==np.inf] = np.nan
+
+        shannon_diversity.name = sheetname_div.rsplit("_", 1)[0]
+        shannon_evenness.name = sheetname_div.rsplit("_", 1)[0]
+        substrate_richness.name = sheetname_div.rsplit("_", 1)[0]
+
+        combined_shannon_div[sheetname_div] = shannon_diversity
+        combined_shannon_even[sheetname_div] = shannon_evenness
+        combined_substrate_richness[sheetname_div] = substrate_richness
+
+    return combined_shannon_div, combined_shannon_even, combined_substrate_richness
 
 directory_list = os.listdir(path_to_files)
 full_reordered_data_dict = {}
@@ -272,9 +324,11 @@ with pd.ExcelWriter(output_directory + "Reordered_Ecoplate_Data.xlsx") as writer
 
         metadata_values_dataframe.to_excel(writer, sheet_name=sheetname, index=False)
 
-awcd_dict = calculate_awcd(full_reordered_data_dict, well_metadata_df)
+## Running Functions to Perform Calculations
 
+awcd_dict = calculate_awcd(full_reordered_data_dict, well_metadata_df)
 sawcd_dict = calculate_sawcd(full_reordered_data_dict, well_metadata_df, inverted_substrate_guilds)
+shannon_div_dict, shannon_even_dict, substrate_rich_dict = calculate_diversity(full_reordered_data_dict, well_metadata_df, threshold)
 
 ## Outputing Excel Spreadsheet with AWCD values
 
@@ -306,3 +360,53 @@ with pd.ExcelWriter(output_directory + "Ecoplate_Substrate_Average_Well_Color_De
         output_sheet = sawcd_dict[names]
 
         output_sheet.to_excel(writer_3, sheet_name=names, index=True)
+
+## Outputting Excel Spreadsheet with Diversity, Richness, and Evenness
+
+with pd.ExcelWriter(output_directory + "Ecoplate_Community_Metrics.xlsx") as writer_4:
+    if "," in separator:
+        for splits in separator.split(","):
+            temp_sd = pd.Series()
+            temp_se = pd.Series()
+            temp_sr = pd.Series()
+
+            for names in sorted(shannon_div_dict.keys()):
+                if splits in names:
+                    temp_sd = pd.concat([temp_sd, shannon_div_dict[names]], axis=1)
+            for names in sorted(shannon_even_dict.keys()):
+                if splits in names:
+                    temp_se = pd.concat([temp_se, shannon_even_dict[names]], axis=1)
+            for names in sorted(substrate_rich_dict.keys()):
+                if splits in names:
+                    temp_sr = pd.concat([temp_sr, substrate_rich_dict[names]], axis=1)
+                        
+            temp_sd.drop(0, axis=1, inplace=True)
+            temp_se.drop(0, axis=1, inplace=True)
+            temp_sr.drop(0, axis=1, inplace=True)
+
+            temp_sd.to_excel(writer_4, sheet_name=splits + " Shannon Diversity", index=True)
+            temp_sr.to_excel(writer_4, sheet_name=splits + " Substrate Richness", index=True)
+            temp_se.to_excel(writer_4, sheet_name=splits + " Shannon Evenness", index=True)
+    else:
+        temp_sd = pd.Series()
+        temp_se = pd.Series()
+        temp_sr = pd.Series()
+
+        for names in sorted(shannon_div_dict.keys()):
+            if splits in names:
+                temp_sd = pd.concat([temp_sd, shannon_div_dict[names]], axis=1)
+        for names in sorted(shannon_even_dict.keys()):
+            if splits in names:
+                temp_se = pd.concat([temp_se, shannon_even_dict[names]], axis=1)
+        for names in sorted(substrate_rich_dict.keys()):
+            if splits in names:
+                temp_sr = pd.concat([temp_sr, substrate_rich_dict[names]], axis=1)
+                        
+        temp_sd.drop(0, axis=1, inplace=True)
+        temp_se.drop(0, axis=1, inplace=True)
+        temp_sr.drop(0, axis=1, inplace=True)
+
+        temp_sd.to_excel(writer_4, sheet_name=splits + " Shannon Diversity", index=True)
+        temp_sr.to_excel(writer_4, sheet_name=splits + " Substrate Richness", index=True)
+        temp_se.to_excel(writer_4, sheet_name=splits + " Shannon Evenness", index=True)
+
