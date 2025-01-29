@@ -8,24 +8,31 @@ import numpy as np
 parser = argparse.ArgumentParser(prog="ecoplate_calculations.py", 
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description=textwrap.dedent('''\
-                                                             Tool to organize output data of Biolog EcoPlate readings from the Tecan i-control software.
+                                                             Tool to organize output data of Biolog EcoPlate readings from 96-well Plate Readers.
                                                              -------------------------------------------------------------------------------------------
-                                                             This tool currently only takes readings of one wavelength per sample.
-
-                                                             The path specified must include all excel spreadsheet outputs from the Tecan i-control software.
                                                              
-                                                             The sep argument is there for grouping results based on groups of excel output spreadsheets. For example, 
+                                                             This tool currently only takes readings for one wavelength per sample.
+
+                                                             The path (-p [--path]) specified must include all excel spreadsheet outputs from the Tecan i-control software.
+                                                             
+                                                             The -s (--sep) argument is there for grouping results based on groups of excel output spreadsheets. For example, 
                                                              if there are two sample locations separated in different spreadsheets (ex. Location1_Day#.xlsx, Location2_Day#.xslx), 
                                                              the user would input 'Location1,Location2' for this argument. The text strings used must be present within the
                                                              output spreadsheets (it is also case-sensitive). If there is only one grouping, still include the name of the grouping
                                                              but without a comma.
                                                              
-                                                             For the line argument, specify the row number of the header from the output readings in the raw
+                                                             For the -l (--line) argument, specify the row number of the header from the output readings in the raw
                                                              data document. For the default excel output from the i-control software, the first column of the
                                                              raw reads will be denoted with '<>'.
+
+                                                             The -r (--rich) argument is used to specify the minimum threshold for corrected absorbance that is used to select which
+                                                             substrates were utilized.
                                                              
-                                                             The out argument specifies the directory where the output files will created'''),
-                                 epilog="Written by Adam Breister, ambreist@ncsu.edu")
+                                                             The out argument specifies the directory where the output folder will created'''),
+                                 epilog=textwrap.dedent('''\
+                                                        Written and Tested with Python version 3.12.7
+                                                        
+                                                        Adam Breister, ambreist@ncsu.edu'''))
 
 parser.add_argument('-p', '--path', help="Specify path to directory with plate reader output excel spreadsheets (default: './')", nargs=1, default="./")
 parser.add_argument('-s', '--sep', help="Comma-separated list of strings that distinguish groupings in input spreadsheets", nargs=1, required=True)
