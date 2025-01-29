@@ -98,8 +98,6 @@ def get_average_absorbance_values(data_dict, metadata_table, sheet_name):
     grouped_average_ecoplate.drop([water_index], inplace=True)
     final_water_absorbance_series = water_absorbance_series.drop(labels='Well Substrate')
 
-    #grouped_average_ecoplate.set_index("Well Substrate", inplace=True)
-
     return final_water_absorbance_series, grouped_average_ecoplate
 
 def calculate_awcd(all_data_dict, metadata):
@@ -315,9 +313,16 @@ for guilds in substrate_guilds.keys():
 
 well_metadata_df = pd.DataFrame({"Well Name":well_ids, "Well Substrate":list_of_substrates})
 
+## Checking for and making new directory for output files
+
+output_folder_name = output_directory + "Ecoplate_Calculations/"
+
+if not os.path.isdir(output_folder_name):
+    os.makedirs(output_folder_name)
+
 ## Outputting Excel Spreadsheet with Reordered Absorbance Readings
 
-with pd.ExcelWriter(output_directory + "Reordered_Ecoplate_Data.xlsx") as writer:
+with pd.ExcelWriter(output_folder_name + "Reordered_Ecoplate_Data.xlsx") as writer:
     for sheetname in sorted(full_reordered_data_dict.keys()):
         values_dataframe = pd.DataFrame(full_reordered_data_dict[sheetname])
         metadata_values_dataframe = pd.concat([well_metadata_df, values_dataframe], axis=1)
@@ -332,7 +337,7 @@ shannon_div_dict, shannon_even_dict, substrate_rich_dict = calculate_diversity(f
 
 ## Outputing Excel Spreadsheet with AWCD values
 
-with pd.ExcelWriter(output_directory + "Ecoplate_Average_Well_Color_Development.xlsx") as writer_2:
+with pd.ExcelWriter(output_folder_name + "Ecoplate_Average_Well_Color_Development.xlsx") as writer_2:
     if "," in separator:
         for splits in separator.split(","):
             specific_series = pd.Series()
@@ -355,7 +360,7 @@ with pd.ExcelWriter(output_directory + "Ecoplate_Average_Well_Color_Development.
 
 ## Outputting Excel Spreadsheet with SAWCD values
 
-with pd.ExcelWriter(output_directory + "Ecoplate_Substrate_Average_Well_Color_Development.xlsx") as writer_3:
+with pd.ExcelWriter(output_folder_name + "Ecoplate_Substrate_Average_Well_Color_Development.xlsx") as writer_3:
     for names in sorted(sawcd_dict.keys()):
         output_sheet = sawcd_dict[names]
 
@@ -363,7 +368,7 @@ with pd.ExcelWriter(output_directory + "Ecoplate_Substrate_Average_Well_Color_De
 
 ## Outputting Excel Spreadsheet with Diversity, Richness, and Evenness
 
-with pd.ExcelWriter(output_directory + "Ecoplate_Community_Metrics.xlsx") as writer_4:
+with pd.ExcelWriter(output_folder_name + "Ecoplate_Community_Metrics.xlsx") as writer_4:
     if "," in separator:
         for splits in separator.split(","):
             temp_sd = pd.Series()
