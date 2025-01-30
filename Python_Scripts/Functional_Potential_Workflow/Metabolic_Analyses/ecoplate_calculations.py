@@ -107,6 +107,23 @@ def get_average_absorbance_values(data_dict, metadata_table, sheet_name):
 
     return final_water_absorbance_series, grouped_average_ecoplate
 
+def correct_absorbance(all_data_dict, metadata):
+    combined_corr_absorbance = {}
+
+    for sheetname_corr in all_data_dict.keys():
+        new_water_absorbance_series, grouped_average_ecoplate_data = get_average_absorbance_values(all_data_dict, metadata, sheetname_corr)
+        
+        grouped_average_ecoplate_data.set_index("Well Substrate", inplace=True)
+
+        corrected_grouped_absorbance = grouped_average_ecoplate_data.subtract(new_water_absorbance_series)
+        corrected_grouped_absorbance[corrected_grouped_absorbance < 0] = 0
+
+        corrected_grouped_absorbance.reset_index(level=0, inplace=True)
+
+        combined_corr_absorbance[sheetname_corr] = corrected_grouped_absorbance
+
+    return combined_corr_absorbance
+
 def calculate_awcd(all_data_dict, metadata):
     combined_awcd = {}
     
@@ -201,6 +218,7 @@ for filename in directory_list:
         print(relative_path)
         full_reordered_data_dict[filename.rsplit(".", 1)[0] + "_reordered"] = read_input_spreadsheets(relative_path, start_line)
 print("\nDone Reading Files")
+
 
 well_ids = []
 
@@ -341,6 +359,7 @@ with pd.ExcelWriter(output_folder_name + "Reordered_Ecoplate_Data.xlsx") as writ
 awcd_dict = calculate_awcd(full_reordered_data_dict, well_metadata_df)
 sawcd_dict = calculate_sawcd(full_reordered_data_dict, well_metadata_df, inverted_substrate_guilds)
 shannon_div_dict, shannon_even_dict, substrate_rich_dict = calculate_diversity(full_reordered_data_dict, well_metadata_df, threshold)
+corrected_od_dict = correct_absorbance(full_reordered_data_dict, well_metadata_df)
 
 ## Outputing Excel Spreadsheet with AWCD values
 
@@ -405,20 +424,31 @@ with pd.ExcelWriter(output_folder_name + "Ecoplate_Community_Metrics.xlsx") as w
         temp_sr = pd.Series()
 
         for names in sorted(shannon_div_dict.keys()):
-            if splits in names:
+            if separator in names:
                 temp_sd = pd.concat([temp_sd, shannon_div_dict[names]], axis=1)
         for names in sorted(shannon_even_dict.keys()):
-            if splits in names:
+            if separator in names:
                 temp_se = pd.concat([temp_se, shannon_even_dict[names]], axis=1)
         for names in sorted(substrate_rich_dict.keys()):
-            if splits in names:
+            if separator in names:
                 temp_sr = pd.concat([temp_sr, substrate_rich_dict[names]], axis=1)
                         
         temp_sd.drop(0, axis=1, inplace=True)
         temp_se.drop(0, axis=1, inplace=True)
         temp_sr.drop(0, axis=1, inplace=True)
 
-        temp_sd.to_excel(writer_4, sheet_name=splits + " Shannon Diversity", index=True)
-        temp_sr.to_excel(writer_4, sheet_name=splits + " Substrate Richness", index=True)
-        temp_se.to_excel(writer_4, sheet_name=splits + " Shannon Evenness", index=True)
+        temp_sd.to_excel(writer_4, sheet_name=separator + " Shannon Diversity", index=True)
+        temp_sr.to_excel(writer_4, sheet_name=separator + " Substrate Richness", index=True)
+        temp_se.to_excel(writer_4, sheet_name=separator + " Shannon Evenness", index=True)
+
+## Outputing Excel Spreadsheet with Corrected OD values
+
+with pd.ExcelWriter(output_folder_name + "Ecoplate_Corrected_Grouped_Absorbances.xlsx") as writer_5:
+    for names in sorted(corrected_od_dict.keys()):
+        corrected_od_sheet = corrected_od_dict[names]
+
+        corrected_od_sheet.to_excel(writer_5, sheet_name=names, index=False)
+
+
+
 
